@@ -1,0 +1,26 @@
+# Build output
+bin/
+obj/
+app/
+tools/bin/
+*.user
+
+# Your own setup: games, emulators, ROMs and settings never go in the repo
+config/games.json
+config/settings.json
+config/art/*
+!config/art/README.md
+config/templates/teknoparrot/
+config/local/
+emulators/
+roms/
+games/
+work/
+
+# Logs and recordings
+*.log
+sessions/
+tools/mamectl/snap/
+tools/mamectl/cmd.txt
+tools/mamectl/fields.txt
+*.cand

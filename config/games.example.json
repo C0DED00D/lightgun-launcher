@@ -1,0 +1,155 @@
+// Copy this file to config\games.json and edit it. Comments and trailing commas are allowed.
+// Every option is described in docs\configuration.md; docs\emulators.md has notes per emulator.
+// Paths are relative to the launcher root (the folder that holds config\). {PLACEHOLDERS} are listed in the docs.
+{
+  // Text in each gun's raw-input device path. Sinden's first two guns are PID 0F02 and 0F01; check yours with
+  // "tools\bin\aimrig\aimrig.exe watch" or in Device Manager.
+  "p1Gun": "VID_16C0&PID_0F02",
+  "p2Gun": "VID_16C0&PID_0F01",
+  "p1Name": "Gun 1 (red)",
+  "p2Name": "Gun 2 (blue)",
+
+  // The Sinden software. Keep a copy just for the launcher (emulators\sinden) so the launcher may edit its settings
+  // and start/stop it; "autostart" starts both guns without clicking Start. Remove "sinden" to run it yourself.
+  "sinden": { "exe": "emulators\\sinden\\Lightgun.exe", "args": "autostart", "delayMs": 4000 },
+  "sindenConfig": "emulators\\sinden\\Lightgun.exe.Config",
+  // Written into sindenConfig before Sinden starts. These pin gun 1 (Red) to slot A and gun 2 (Blue) to slot B
+  // (with "Auto", Sinden gives slot A to whichever gun Windows lists first, which can swap the players), and make
+  // each gun's buttons send that player's keys:
+  //   front-right = Start (1 / 2), rear-right = coin (5 / 6), front-left = 3 / 4.
+  // Sinden's button list index: 9 = "1", 10 = "2", 11 = "3", 12 = "4", 13 = "5", 14 = "6".
+  // Gun type index: 0 None, 1 Black, 2 Blue, 3 Red, 4 Player2, 5 Auto.
+  "sindenSettings": {
+    "comboLightgunAType": "3", "comboLightgunBType": "2",
+    "cbButtonFrontRight": "9", "cbButtonFrontRightOffscreen": "9",
+    "cbButtonRearRight": "13", "cbButtonRearRightOffscreen": "13",
+    "cbButtonFrontRightB": "10", "cbButtonFrontRightOffscreenB": "10",
+    "cbButtonRearRightB": "14", "cbButtonRearRightOffscreenB": "14",
+    "cbButtonFrontLeft": "11", "cbButtonFrontLeftOffscreen": "11",
+    "cbButtonFrontLeftB": "12", "cbButtonFrontLeftOffscreenB": "12"
+  },
+  // Keys that belong to one player. A gun sending the other player's key is logged and shown as a warning.
+  "playerKeys": { "D1": 1, "D5": 1, "D3": 1, "D2": 2, "D6": 2, "D4": 2 },
+
+  // Sinden's D-pad down sends F11 by default. Hold it for quitHoldMs to return to the menu.
+  "quitKey": "F11",
+  "quitHoldMs": 3000,
+  "borderPercent": 2.0,
+
+  "menu": {
+    "title": "LIGHTGUN ARCADE",
+    "subtitle": "Shoot a game to play  ·  In game, hold D-pad down for 3 seconds to quit",
+    "columns": 5,
+    "recoilTile": true,
+    "calibrateTile": true
+  },
+
+  // Session recordings in app\sessions (read them with tools\sessions\lastsession.ps1).
+  "recording": {
+    "enabled": true,
+    "screenshotEverySeconds": 5,
+    "screenshotOnButton": true,
+    "smoothnessCheckEverySeconds": 30,
+    "copyEmulatorLogs": true,
+    "keepSessions": 25,
+    "emulatorLogs": [
+      "emulators\\mame\\error.log",
+      "emulators\\pcsx2\\logs\\emulog.txt",
+      "emulators\\rpcs3\\log\\RPCS3.log",
+      "emulators\\flycast\\flycast.log",
+      "emulators\\supermodel\\Supermodel.log"
+    ]
+  },
+
+  // ---------------------------------------------------------------------------------------------------------------
+  // Games. Each tile shows config\art\<id>.png if it exists. Replace the "<...>" parts with your own files.
+  // A game whose "requires" files are missing shows greyed out with the missing file name.
+  // ---------------------------------------------------------------------------------------------------------------
+  "games": [
+    {
+      // MAME. The picture is 4:3 but MAME maps the gun over the whole 16:9 screen, so "borderArea": "4:3" draws the
+      // white border around the picture: the Sinden camera then reports 0..100 % across the picture itself.
+      // postLaunchKeys dismiss MAME's start-up info screens.
+      "id": "mame-example", "title": "Example (MAME)", "system": "Arcade", "emulator": "MAME", "year": "", "players": 2,
+      "run": { "exe": "emulators\\mame\\mame.exe", "args": "<romset>", "cwd": "emulators\\mame" },
+      "requires": [ "emulators\\mame\\roms\\<romset>.zip" ],
+      "borderless": true, "borderArea": "4:3",
+      "postLaunchKeys": [ { "delayMs": 5000, "key": "Space" }, { "delayMs": 3000, "key": "Space" } ]
+    },
+    {
+      // PCSX2 with two GunCon 2s (needs a two-mouse PCSX2 build for gun 2, see docs\emulators.md).
+      // postLaunchKeys answer a boot-time gun calibration screen by themselves: "center" parks the pointer at the
+      // screen centre first; D5 / F9 = gun 1 calibration shot / A, D6 / F7 = gun 2 (see the template's bindings).
+      "id": "ps2-example", "title": "Example (PS2)", "system": "PlayStation 2", "emulator": "PCSX2", "platform": "PS2", "players": 2,
+      "run": { "exe": "emulators\\pcsx2\\pcsx2-qt.exe", "args": "-batch -nogui -fullscreen -- \"{ROOT}\\roms\\<game>.iso\"" },
+      "templates": [ { "from": "config\\templates\\pcsx2\\PCSX2.ini", "to": "emulators\\pcsx2\\inis\\PCSX2.ini" } ],
+      "requires": [ "roms\\<game>.iso", "emulators\\pcsx2\\bios\\*.bin" ],
+      "postLaunchKeys": [ { "delayMs": 20000, "key": "D5", "center": true }, { "delayMs": 2000, "key": "F9" },
+                          { "delayMs": 3000, "key": "D6", "center": true }, { "delayMs": 2000, "key": "F7" } ],
+      "closeWaitMs": 8000
+    },
+    {
+      // RPCS3 with each gun as its own PS Move (raw mouse handler) or GunCon 3. The quit button also presses Down
+      // for the game's menus ("quitKeyAlso"). "triggerKeys" turns each gun's trigger into a key, for handlers that
+      // ignore the gun's own mouse button (map the keys to the trigger in the raw mouse template).
+      "id": "ps3-example", "title": "Example (PS3)", "system": "PlayStation 3", "emulator": "RPCS3", "platform": "PS3", "players": 2,
+      "run": { "exe": "emulators\\rpcs3\\rpcs3.exe", "args": "--no-gui --fullscreen \"{ROOT}\\emulators\\rpcs3\\dev_hdd0\\game\\<TITLEID>\\USRDIR\\EBOOT.BIN\"" },
+      "templates": [
+        { "from": "config\\templates\\rpcs3\\raw_mouse.yml", "to": "emulators\\rpcs3\\config\\raw_mouse.yml" },
+        { "from": "config\\templates\\rpcs3\\gem_mouse.yml", "to": "emulators\\rpcs3\\config\\gem_mouse.yml" }
+      ],
+      "requires": [ "emulators\\rpcs3\\dev_hdd0\\game\\<TITLEID>\\USRDIR\\EBOOT.BIN" ],
+      // Optional: keep a value in guest memory (e.g. a credit counter) while a guard word matches. See docs\tools.md.
+      // "helpers": [ { "exe": "tools\\bin\\rpcs3hold\\rpcs3hold.exe", "args": "<guardAddr>=<guardValue> <addr>=<value>" } ],
+      "quitKeyAlso": "Down",
+      "closeWaitMs": 20000
+    },
+    {
+      // Flycast (NAOMI). Per-gun port assignment in emu.cfg, per-gun button mappings named after each device.
+      "id": "naomi-example", "title": "Example (NAOMI)", "system": "Sega NAOMI", "emulator": "Flycast", "players": 2,
+      "run": { "exe": "emulators\\flycast\\flycast.exe", "args": "\"{ROOT}\\roms\\<game>.zip\"" },
+      "templates": [
+        { "from": "config\\templates\\flycast\\emu.cfg", "to": "emulators\\flycast\\emu.cfg" },
+        { "from": "config\\templates\\flycast\\mappings\\gun_keyboard.cfg", "to": "emulators\\flycast\\mappings\\RAW_HID Keyboard Device [{P1KBD_HWID}]_arcade.cfg", "binary": true },
+        { "from": "config\\templates\\flycast\\mappings\\gun_keyboard.cfg", "to": "emulators\\flycast\\mappings\\RAW_HID Keyboard Device [{P2KBD_HWID}]_arcade.cfg", "binary": true },
+        { "from": "config\\templates\\flycast\\mappings\\gun_mouse.cfg", "to": "emulators\\flycast\\mappings\\RAW_HID-compliant mouse [{P1MOUSE_HWID}]_arcade.cfg", "binary": true },
+        { "from": "config\\templates\\flycast\\mappings\\gun_mouse.cfg", "to": "emulators\\flycast\\mappings\\RAW_HID-compliant mouse [{P2MOUSE_HWID}]_arcade.cfg", "binary": true }
+      ],
+      "requires": [ "roms\\<game>.zip" ], "borderless": true
+    },
+    {
+      // Supermodel (Model 3). The window stays 1 px short of the screen so the border and quit banner can show.
+      "id": "model3-example", "title": "Example (Model 3)", "system": "Sega Model 3", "emulator": "Supermodel", "players": 2,
+      "run": { "exe": "emulators\\supermodel\\supermodel.exe", "args": "\"{ROOT}\\roms\\<game>.zip\" -window -res={SCREEN_W},{SCREEN_H_1} -crosshairs=0 -input-system=rawinput",
+               "cwd": "emulators\\supermodel", "env": { "__COMPAT_LAYER": "HighDpiAware" } },
+      "templates": [ { "from": "config\\templates\\supermodel\\Supermodel.ini", "to": "emulators\\supermodel\\Config\\Supermodel.ini" } ],
+      "requires": [ "roms\\<game>.zip" ]
+    },
+    {
+      // Model 2 Emulator + DemulShooter (gun hook). The emulator draws the border itself (Model 2 Lua scripts),
+      // so the launcher's overlay is off. Optional mempatch helper: see docs\tools.md.
+      "id": "model2-example", "title": "Example (Model 2)", "system": "Sega Model 2", "emulator": "Model 2 Emulator + DemulShooter", "menuEmulator": "Model 2 Emulator", "players": 2,
+      "run": { "exe": "emulators\\m2emulator\\emulator_multicpu.exe", "args": "<romset>" },
+      "helpers": [ { "exe": "emulators\\demulshooter\\DemulShooter.exe", "args": "-target=model2 -rom=<romset>", "delayMs": 1500 } ],
+      "templates": [ { "from": "config\\templates\\demulshooter\\config.ini", "to": "emulators\\demulshooter\\config.ini" } ],
+      "requires": [ "emulators\\m2emulator\\roms\\<romset>.zip" ], "border": "emulator",
+      "kill": [ "DemulShooter" ]
+    },
+    {
+      // A front-end that starts the game as another process (TeknoParrot). "windowProcess" is the game's process.
+      // The front-end binds keys that come from software, so the launcher relays the guns' Start/coin keys
+      // ("relayKeys") and deletes the front-end's cached bindings before each start ("deleteBeforeLaunch").
+      // "aspect": "4:3" + "borderlessDelayMs" lets a 4:3 game set itself up at its own resolution first, then
+      // scales its window to full height with black sides. "keepForeground" pulls the game back in front of
+      // loader consoles for the whole game.
+      "id": "frontend-example", "title": "Example (TeknoParrot)", "system": "PC arcade", "emulator": "TeknoParrot", "players": 2,
+      "run": { "exe": "emulators\\teknoparrot\\TeknoParrotUi.exe", "args": "--profile=<Profile>.xml", "env": { "DOTNET_ROLL_FORWARD": "Major" } },
+      "templates": [ { "from": "config\\templates\\teknoparrot\\<Profile>.xml", "to": "emulators\\teknoparrot\\UserProfiles\\<Profile>.xml" } ],
+      "requires": [ "emulators\\teknoparrot\\TeknoParrotUi.exe", "games\\<game folder>\\<game>.exe" ],
+      "borderless": true, "aspect": "4:3", "windowProcess": "<game exe name>", "borderlessDelayMs": 15000, "keepForeground": true,
+      "deleteBeforeLaunch": [ "emulators\\teknoparrot\\InputBindings\\<Profile>.json" ],
+      "relayKeys": [ "D1", "D2", "D5", "D6" ],
+      "kill": [ "<game exe name>", "TeknoParrotUi", "OpenParrotLoader", "OpenParrotLoader64", "BudgieLoader" ]
+    }
+  ]
+}
